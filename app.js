@@ -20,6 +20,9 @@ const t = 1/framesPerSecond;
 
 var firstPlayerScore = 0;
 var secondplayerScore = 0;
+var GameGoOn = true;
+var whoHadWon = '';
+const WINNING_SCORE = 10;
 
 function calculateMausePos(evt) {
   var rect = canvas.getBoundingClientRect();
@@ -35,15 +38,23 @@ function calculateMausePos(evt) {
 window.onload = function() {
   canvas = document.getElementById('gameCanvas');
   canvasContext = canvas.getContext('2d');
+
   canvasContext.fillStyle = 'black';
-  canvasContext.fillRect(0,0,canvas.width, canvas.height);  
-  setInterval(function() {
-    drawCanvas();
-    ballMovement();
-    computerMovement();
-    drawRocket(PADDLE_OFFSET, paddle1Y, PADDLE_THICKNESS, PADDLE_HEIGHT, PADDLE_COLOR); // your
-    drawRocket(canvas.width - PADDLE_OFFSET - PADDLE_THICKNESS, paddle2Y, PADDLE_THICKNESS, PADDLE_HEIGHT, PADDLE_COLOR); // computer
-    drawBall(ballX, ballY, BALL_SIZE, BALL_COLOR);
+  canvasContext.fillRect(0,0,canvas.width, canvas.height);
+  canvasContext.stroke();
+
+  var interval = setInterval(function() {
+    if(GameGoOn){
+      drawCanvas();
+      ballMovement();
+      computerMovement();
+      drawRocket(PADDLE_OFFSET, paddle1Y, PADDLE_THICKNESS, PADDLE_HEIGHT, PADDLE_COLOR); // your
+      drawRocket(canvas.width - PADDLE_OFFSET - PADDLE_THICKNESS, paddle2Y, PADDLE_THICKNESS, PADDLE_HEIGHT, PADDLE_COLOR); // computer
+      drawBall(ballX, ballY, BALL_SIZE, BALL_COLOR);
+    }else {
+      WinningProcedure();
+      clearInterval(interval);
+    }
   },time);
 
   canvas.addEventListener('mousemove', function(evt) {
@@ -51,7 +62,7 @@ window.onload = function() {
     paddle1Y = mousePos.y - PADDLE_HEIGHT/2;
   })
 }
-function drawCanvas() {  
+function drawCanvas() {
   canvasContext.fillStyle = 'black';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
   canvasContext.fillStyle = 'white';
@@ -88,6 +99,14 @@ function ballReset() {
   }  
   ballX = canvas.width/2;
   ballY = canvas.height/2;
+
+  if(firstPlayerScore >= WINNING_SCORE){
+    GameGoOn = false;
+    whoHadWon = 'First player';
+  }else if(secondplayerScore >= WINNING_SCORE){
+    GameGoOn = false;
+    whoHadWon = 'Second player';
+  }
 }
 
 function ballSpeedChange(paddle) {
@@ -102,10 +121,11 @@ function ballSpeedChange(paddle) {
 }
 
 function computerMovement() {
+
   let paddle2YCenter = paddle2Y + PADDLE_HEIGHT/2;
   let localSpeed = Math.abs(paddle2YCenter - ballY)/t;
   let speed = localSpeed < paddleSpeed ? localSpeed: paddleSpeed;
-  console.log(speed);
+
   if(paddle2YCenter < ballY + 35 && ballSpeedX > 0 && ballX > 600){
       paddle2Y += speed * t;  
   }else if(paddle2YCenter > ballY - 35 && ballSpeedX > 0 && ballX > 600) {
@@ -115,7 +135,7 @@ function computerMovement() {
   }else{
     // do nothing
   }
- } 
+} 
 
 function moveToTheCenter() {
   let paddle2YCenter = paddle2Y + PADDLE_HEIGHT/2;
@@ -143,13 +163,26 @@ function ballMovement() {
     }
   }
   if(ballX >= canvas.width){
+    firstPlayerScore++; // score incrementing should be before reset
     ballReset();
-    firstPlayerScore++;
     // point for player
   }else if (ballX <= 0) {
-    ballReset();
-    secondplayerScore++;
+    secondplayerScore++; // score incrementing should be before reset
+    ballReset();    
     // point for computer
   }
   if(ballY >= canvas.height || ballY <= 0) { ballSpeedY = -ballSpeedY;}
+}
+
+function WinningProcedure() {
+
+  drawRocket(PADDLE_OFFSET, paddle1Y, PADDLE_THICKNESS, PADDLE_HEIGHT, 'blue'); // your
+  drawRocket(canvas.width - PADDLE_OFFSET - PADDLE_THICKNESS, paddle2Y, PADDLE_THICKNESS, PADDLE_HEIGHT, 'blue'); // computer
+  drawBall(ballX, ballY, BALL_SIZE, 'blue');
+
+  canvasContext.fillStyle = 'blue';
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  canvasContext.fillStyle = 'white';
+  canvasContext.font="34px Georgia";
+  canvasContext.fillText(`${whoHadWon} had won the Game`, canvas.width/2 - 250, canvas.height/2);
 }
